@@ -213,7 +213,7 @@ def main():
     if not got:
         sys.exit("Nothing scraped - rates.json left unchanged.")
     os.makedirs(os.path.dirname(OUT) or ".", exist_ok=True)
-    json.dump({"date": str(TODAY), "demo": False, "cities": cities, "parts": parts},
+    json.dump({"date": str(posts[0][0] if posts else TODAY), "demo": False, "cities": cities, "parts": parts},
               open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print("Saved", len(cities), "cities,", len(parts), "parts")
 
