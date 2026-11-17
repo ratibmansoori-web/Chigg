@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>भाव डालें</title>
+<style>
+:root{--bg:#F1F5F2;--surf:#fff;--ink:#16201A;--mut:#5E6B63;--line:#D5DDD7;--acc:#D98A0B;--ok:#1E8A4C;--bad:#C23B22;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#101712;--surf:#18221B;--ink:#EAF1EC;--mut:#9AA89F;--line:#2A372E;--acc:#F0A83A;--ok:#4CC380;--bad:#F07B63;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.35 system-ui,-apple-system,'Segoe UI',sans-serif}
+main{max-width:560px;margin:0 auto;padding:16px 16px 90px}
+h1{font-size:24px;margin:4px 0 12px}h2{font-size:18px;margin:22px 0 6px}h3{font-size:16px;margin:14px 0 4px}
+.top{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px}
+label{font-size:13px;color:var(--mut)}
+input{font:inherit;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0;width:100%}
+.row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surf);border-bottom:1px solid var(--line)}
+.row span{flex:1;min-width:0}.row input{width:96px;text-align:right}
+.x{border:0;background:none;color:var(--bad);font-size:20px;padding:4px 8px}
+.btn{border:1px solid var(--line);background:var(--surf);color:var(--ink);font:inherit;font-weight:600;padding:10px 12px;border-radius:8px;margin-top:6px}
+.save{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--line)}
+.save button{width:100%;max-width:528px;display:block;margin:0 auto;padding:14px;border:0;border-radius:10px;background:var(--acc);color:#16201A;font:inherit;font-weight:800}
+#msg{margin:10px 0;font-weight:600}.ok{color:var(--ok)}.er{color:var(--bad)}
+.sm{font-size:13px;color:var(--mut)}
+</style>
+</head>
+<body>
+<main>
+<h1>मुर्गा भाव डालें</h1>
+<div class="top">
+<div><label for="pw">पासवर्ड</label><input id="pw" type="password" autocomplete="current-password"></div>
+<div><label for="date">भाव की तारीख</label><input id="date" type="date"></div>
+<div class="sm" id="last"></div>
+</div>
+<div id="msg" role="status"></div>
+<div id="parts"></div>
+<div id="states"></div>
+<button class="btn" id="newstate">+ नया राज्य जोड़ें</button>
+<p class="sm">नए दिन की तारीख चुनकर सेव करने पर पुराने भाव अपने आप "कल" और "परसों" बन जाते हैं। उसी तारीख पर दोबारा सेव करने से सिर्फ आज का भाव बदलता है। खाली खाना छोड़ दें तो वो भाव नहीं बदलेगा।</p>
+</main>
+<div class="save"><button id="save">सेव करें</button></div>
+<script>
+var $=function(i){return document.getElementById(i)},D=null,removed=[];
+var DELHI='दिल्ली';
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function ist(){return new Date(Date.now()+19800000).toISOString().slice(0,10)}
+function msg(t,c){$('msg').textContent=t;$('msg').className=c||''}
+function collect(){
+document.querySelectorAll('[data-c]').forEach(function(e){D.cities[+e.dataset.c].today=e.value});
+document.querySelectorAll('[data-p]').forEach(function(e){D.parts[+e.dataset.p].t=e.value})}
+function inp(a,i,v){return'<input type="number" inputmode="decimal" min="0" step="any" data-'+a+'="'+i+'" value="'+(v==null?'':v)+'">'}
+function render(){
+$('last').textContent='अभी सेव की गई तारीख: '+(D.date||'कोई नहीं');
+if(!$('date').value)$('date').value=(D.date&&D.date>ist())?D.date:ist();
+var h='<h2>दिल्ली मंडी</h2>',g='';
+D.parts.forEach(function(p,i){if(p.g!==g){g=p.g;h+='<h3>'+esc(g)+'</h3>'}h+='<div class="row"><span>'+esc(p.n)+'</span>'+inp('p',i,p.t)+'</div>'});
+$('parts').innerHTML=h;
+var st=[];D.cities.forEach(function(c){if(c.state!==DELHI&&st.indexOf(c.state)<0)st.push(c.state)});
+h='<h2>राज्य और शहर</h2>';
+st.forEach(function(s){
+h+='<h3>'+esc(s)+'</h3>';
+D.cities.forEach(function(c,i){if(c.state===s)h+='<div class="row"><span>'+esc(c.city)+'</span>'+inp('c',i,c.today)+'<button class="x" data-del="'+i+'" aria-label="हटाएं">✕</button></div>'});
+h+='<button class="btn" data-add="'+esc(s)+'">+ शहर जोड़ें</button>'});
+$('states').innerHTML=h}
+document.addEventListener('click',function(e){
+var b=e.target.closest('button');if(!b)return;
+if(b.dataset.del!=null){collect();var c=D.cities[+b.dataset.del];if(!confirm(c.city+' हटाएं?'))return;
+if(!c.isNew)removed.push({city:c.city,state:c.state});D.cities.splice(+b.dataset.del,1);render()}
+else if(b.dataset.add!=null){collect();var n=prompt('शहर का नाम');if(n&&n.trim()){D.cities.push({city:n.trim(),state:b.dataset.add,today:'',isNew:1});render()}}});
+$('newstate').onclick=function(){collect();var s=prompt('राज्य का नाम');if(!s||!s.trim())return;var n=prompt('पहले शहर का नाम');if(n&&n.trim()){D.cities.push({city:n.trim(),state:s.trim(),today:'',isNew:1});render()}};
+$('save').onclick=function(){
+collect();
+var pw=$('pw').value;if(!pw){msg('पासवर्ड डालें','er');return}
+var body={password:pw,date:$('date').value,remove:removed,
+cities:D.cities.filter(function(c){return c.state!==DELHI&&Number(c.today)>0}).map(function(c){return{city:c.city,state:c.state,today:c.today}}),
+parts:D.parts.filter(function(p){return Number(p.t)>0}).map(function(p){return{g:p.g,n:p.n,t:p.t}})};
+msg('सेव हो रहा है…');
+fetch('/api/rates',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.json().then(function(j){return{ok:r.ok,j:j}})}).then(function(x){
+if(!x.ok){msg(x.j.error==='wrong password'?'पासवर्ड गलत है':'नहीं हुआ: '+x.j.error,'er');return}
+try{localStorage.setItem('adm_pw',pw)}catch(e){}
+D=x.j;removed=[];render();msg('सेव हो गया ✓ (ऐप में 1 मिनट में दिखेगा)','ok')}).catch(function(){msg('नेट की दिक्कत, दोबारा कोशिश करें','er')})};
+try{$('pw').value=localStorage.getItem('adm_pw')||''}catch(e){}
+fetch('/api/rates').then(function(r){return r.json()}).then(function(j){D=j;render()}).catch(function(){msg('भाव लोड नहीं हुए','er')});
+</script>
+</body>
+</html>
