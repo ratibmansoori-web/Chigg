@@ -1,5 +1,7 @@
 {
   "name": "chigg",
+  "main": "worker.js",
   "compatibility_date": "2026-11-01",
-  "assets": { "directory": "./public" }
+  "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": true },
+  "kv_namespaces": [ { "binding": "RATES", "id": "ca34940605e646649e268fe08edcf701" } ]
 }
